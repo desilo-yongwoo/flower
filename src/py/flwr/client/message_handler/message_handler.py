@@ -23,10 +23,12 @@ from flwr.client.client import (
     maybe_call_fit,
     maybe_call_get_parameters,
     maybe_call_get_properties,
+    _get_crypto_parameters
 )
 from flwr.client.numpy_client import NumPyClient
 from flwr.client.typing import ClientFn
-from flwr.common import ConfigsRecord, Context, Message, Metadata, RecordSet, log
+from flwr.common import ConfigsRecord, Context, Message, Metadata, RecordSet, log, Status
+from flwr.common.serde import *
 from flwr.common.constant import MessageType, MessageTypeLegacy
 from flwr.common.recordset_compat import (
     evaluateres_to_recordset,
@@ -139,6 +141,21 @@ def handle_legacy_message_from_msgtype(
             evaluate_ins=recordset_to_evaluateins(message.content, keep_input=True),
         )
         out_recordset = evaluateres_to_recordset(evaluate_res)
+    elif message_type == "get_crypto_parameters":
+        print(message)
+        p = message.content.configs_records['config']['p']
+        g = message.content.configs_records['config']['g']
+
+        public_key = _get_crypto_parameters(client, p, g)
+
+        get_crypto_parameters_res = get_crypto_parameters_res_to_proto(Status(code=0, message="Success"), public_key)
+
+
+        res_str = "getcryptoparametersres"
+
+        out_recordset = RecordSet()
+        out_recordset.configs_records["config"] = ConfigsRecord({"public_key": public_key})
+
     else:
         raise ValueError(f"Invalid message type: {message_type}")
 

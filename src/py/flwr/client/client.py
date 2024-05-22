@@ -141,6 +141,12 @@ class Client(ABC):
             metrics={},
         )
 
+    def get_crypto_parameters(self, p: list[int], g: list[int]) -> list[int]:
+        """Return the calculated public key with given parameter modulo p and generator g.
+        basically, the default version in this code just returns p, so client should overwrite functions to correctly return g^x mod p !
+        """
+        return p
+
     def get_context(self) -> Context:
         """Get the run context from this client."""
         return self.context
@@ -173,6 +179,8 @@ def has_evaluate(client: Client) -> bool:
     """Check if Client implements evaluate."""
     return type(client).evaluate != Client.evaluate
 
+def _get_crypto_parameters(client: Client, p: list[int], g: list[int]) -> list[int]:
+    return client.get_crypto_parameters(p, g)
 
 def maybe_call_get_properties(
     client: Client, get_properties_ins: GetPropertiesIns

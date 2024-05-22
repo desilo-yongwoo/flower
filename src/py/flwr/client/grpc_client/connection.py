@@ -17,10 +17,10 @@
 
 import uuid
 from contextlib import contextmanager
-from logging import DEBUG
+from logging import DEBUG, INFO
 from pathlib import Path
 from queue import Queue
-from typing import Callable, Iterator, Optional, Tuple, Union, cast
+from typing import Callable, Iterator, Optional, Tuple, Union, cast, List
 
 from cryptography.hazmat.primitives.asymmetric import ec
 
@@ -28,12 +28,13 @@ from flwr.common import (
     DEFAULT_TTL,
     GRPC_MAX_MESSAGE_LENGTH,
     ConfigsRecord,
+    ParametersRecord,
     Message,
     Metadata,
     RecordSet,
 )
 from flwr.common import recordset_compat as compat
-from flwr.common import serde
+from flwr.common import serde, Status
 from flwr.common.constant import MessageType, MessageTypeLegacy
 from flwr.common.grpc import create_channel
 from flwr.common.logger import log
@@ -172,6 +173,27 @@ def grpc_connection(  # pylint: disable=R0913, R0915
                 {"seconds": proto.reconnect_ins.seconds}
             )
             message_type = "reconnect"
+        elif field == "get_crypto_parameters_ins":
+            recordset = RecordSet()
+            p, g = serde.get_crypto_parameters_ins_from_proto(proto.get_crypto_parameters_ins)
+            log(INFO, p) 
+            log(INFO, g)            
+
+            p_recv = []
+            g_recv = []
+
+            for p_elem in p:
+                p_recv.append(p_elem)
+
+            for g_elem in g:
+                g_recv.append(g_elem)
+
+            recordset.configs_records["config"] = ConfigsRecord(
+                {"p": p_recv,
+                 "g": g_recv
+                }
+            )
+            message_type = "get_crypto_parameters"
         else:
             raise ValueError(
                 "Unsupported instruction in ServerMessage, "
@@ -221,6 +243,15 @@ def grpc_connection(  # pylint: disable=R0913, R0915
             )
             msg_proto = ClientMessage(
                 disconnect_res=ClientMessage.DisconnectRes(reason=reason)
+            )
+        elif message_type == "get_crypto_parameters":
+            pk = recordset.configs_records["config"]["public_key"]
+
+            pk_res = ClientMessage.GetCryptoParametersRes(public_key=pk)
+
+            msg_proto = ClientMessage(
+                get_crypto_parameters_res = pk_res
+                # get_crypto_parameters_res = ClientMessage.GetCryptoParametersRes(status=Status(code=0, message="Success"), public_key=public_key)
             )
         else:
             raise ValueError(f"Invalid message type: {message_type}")
