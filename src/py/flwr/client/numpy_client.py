@@ -14,6 +14,8 @@
 # ==============================================================================
 """Flower client app."""
 
+from logging import INFO
+from flwr.common.logger import log
 
 from abc import ABC
 from typing import Callable, Dict, Tuple
@@ -180,6 +182,12 @@ class NumPyClient(ABC):
         """
         return p
 
+    def create_encryption_key(self, pks: dict) -> None:
+        """Return nothing, only signal is sent to the server.
+           Client makes encryption key with received public key and secret key.
+        """
+        return
+
     def get_context(self) -> Context:
         """Get the run context from this client."""
         return self.context
@@ -213,7 +221,15 @@ def has_evaluate(client: NumPyClient) -> bool:
     return type(client).evaluate != NumPyClient.evaluate
 
 def _get_crypto_parameters(client: Client, p: list[int], g: list[int]) -> list[int]:
+    """
+    Generate crypto parameters and distribute to them.
+    Clients generate its' own private key and public key, then send public key
+    """
     return client.numpy_client.get_crypto_parameters(p=p, g=g)
+
+def _create_encryption_key(client: Client, pks: dict) -> None:
+    """ Generate Secure aggregation encryption key using other's public key and own's priate key. """
+    client.numpy_client.create_encryption_key(pks)
 
 def _constructor(self: Client, numpy_client: NumPyClient) -> None:
     self.numpy_client = numpy_client  # type: ignore
@@ -316,6 +332,9 @@ def _wrap_numpy_client(client: NumPyClient) -> Client:
 
     if has_evaluate(client=client):
         member_dict["evaluate"] = _evaluate
+
+    member_dict["get_crypto_parameters"] = _get_crypto_parameters
+    member_dict["create_encryption_key"] = _create_encryption_key
 
     # Create wrapper class
     wrapper_class = type("NumPyClientWrapper", (Client,), member_dict)

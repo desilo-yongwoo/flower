@@ -17,6 +17,9 @@
 # Needed to `Client` class can return a type of `Client` (not needed in py3.11+)
 from __future__ import annotations
 
+from logging import INFO
+from flwr.common.logger import log
+
 from abc import ABC
 
 from flwr.common import (
@@ -143,9 +146,15 @@ class Client(ABC):
 
     def get_crypto_parameters(self, p: list[int], g: list[int]) -> list[int]:
         """Return the calculated public key with given parameter modulo p and generator g.
-        basically, the default version in this code just returns p, so client should overwrite functions to correctly return g^x mod p !
+            basically, the default version in this code just returns p, so client should overwrite functions to correctly return g^x mod p !
         """
         return p
+
+    def create_encryption_key(self, pks: dict) -> None:
+        """Return nothing, only signal is sent to the server.
+           Client makes encryption key with received public key and secret key.
+        """ 
+        return
 
     def get_context(self) -> Context:
         """Get the run context from this client."""
@@ -181,6 +190,9 @@ def has_evaluate(client: Client) -> bool:
 
 def _get_crypto_parameters(client: Client, p: list[int], g: list[int]) -> list[int]:
     return client.get_crypto_parameters(p, g)
+
+def _create_encryption_key(client: Client, pks: dict) -> None:
+    return client.create_encryption_key(pks)
 
 def maybe_call_get_properties(
     client: Client, get_properties_ins: GetPropertiesIns

@@ -152,6 +152,10 @@ class GetPropertiesRes:
     status: Status
     properties: Properties
 
+@dataclass
+class PublicKey:
+    owner: str
+    pk: List[int]
 
 @dataclass
 class ReconnectIns:

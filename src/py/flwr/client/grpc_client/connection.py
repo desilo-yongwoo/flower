@@ -14,10 +14,9 @@
 # ==============================================================================
 """Contextmanager for a gRPC streaming channel to the Flower server."""
 
-
+from logging import DEBUG
 import uuid
 from contextlib import contextmanager
-from logging import DEBUG, INFO
 from pathlib import Path
 from queue import Queue
 from typing import Callable, Iterator, Optional, Tuple, Union, cast, List
@@ -176,8 +175,6 @@ def grpc_connection(  # pylint: disable=R0913, R0915
         elif field == "get_crypto_parameters_ins":
             recordset = RecordSet()
             p, g = serde.get_crypto_parameters_ins_from_proto(proto.get_crypto_parameters_ins)
-            log(INFO, p) 
-            log(INFO, g)            
 
             p_recv = []
             g_recv = []
@@ -194,6 +191,20 @@ def grpc_connection(  # pylint: disable=R0913, R0915
                 }
             )
             message_type = "get_crypto_parameters"
+        elif field == "create_encryption_key_ins":
+            recordset = RecordSet()
+            
+            pks = serde.create_encryption_key_ins_from_proto(proto.create_encryption_key_ins)
+
+            pks_recv = {}
+
+            for p in pks:
+                owner = p.owner
+                pk    = p.pk
+                pks_recv[owner] = list(pk)
+
+            recordset.configs_records["config"] = ConfigsRecord(pks_recv)
+            message_type="create_encryption_key"
         else:
             raise ValueError(
                 "Unsupported instruction in ServerMessage, "
@@ -245,14 +256,17 @@ def grpc_connection(  # pylint: disable=R0913, R0915
                 disconnect_res=ClientMessage.DisconnectRes(reason=reason)
             )
         elif message_type == "get_crypto_parameters":
+            #TODO : add status message
             pk = recordset.configs_records["config"]["public_key"]
 
             pk_res = ClientMessage.GetCryptoParametersRes(public_key=pk)
 
             msg_proto = ClientMessage(
                 get_crypto_parameters_res = pk_res
-                # get_crypto_parameters_res = ClientMessage.GetCryptoParametersRes(status=Status(code=0, message="Success"), public_key=public_key)
             )
+        elif message_type == "create_encryption_key":
+            #TODO : add status message
+            msg_proto = ClientMessage()
         else:
             raise ValueError(f"Invalid message type: {message_type}")
 

@@ -15,7 +15,7 @@
 """ProtoBuf serialization and deserialization."""
 
 
-from typing import Any, Dict, List, MutableMapping, OrderedDict, Type, TypeVar, cast
+from typing import Any, Dict, List, Tuple, MutableMapping, OrderedDict, Type, TypeVar, cast
 
 from google.protobuf.message import Message as GrpcMessage
 
@@ -41,12 +41,52 @@ from flwr.proto.transport_pb2 import (
     Scalar,
     ServerMessage,
     Status,
+    PublicKey
 )
 
 # pylint: enable=E0611
 from . import Array, ConfigsRecord, MetricsRecord, ParametersRecord, RecordSet, typing
 from .message import Error, Message, Metadata
 from .record.typeddict import TypedDict
+
+#  === CreateEncryptionKey message ===
+def create_encryption_key_ins_to_proto(pks: List[typing.PublicKey]) -> ServerMessage.CreateEncryptionKeyIns:
+    """Serialize `create_encryption_key_ins` to ProtoBuf."""
+    pk_proto = []
+    for pk in pks:
+        pk_proto.append(PublicKey(owner=pk.owner,pk=pk.pk))
+    return ServerMessage.CreateEncryptionKeyIns(public_keys=pk_proto)
+
+def create_encryption_key_ins_from_proto(msg : ServerMessage.CreateEncryptionKeyIns) -> list[PublicKey]:
+    """Deserialize `create_encryption_key_ins` from ProtoBuf."""
+    return msg.public_keys
+
+def create_encryption_key_res_to_proto(status: typing.Status) -> ClientMessage.CreateEncryptionKeyRes:
+    """Serialize `create_encryption_key_res` to ProtoBuf."""
+    return ClientMessage.CreateEncryptionKeyRes(status=status)
+
+def create_encryption_key_res_from_proto(res: ClientMessage.CreateEncryptionKeyRes) -> None:
+    """Deserialize `create_encryption_key_res` from ProtoBuf."""
+    return
+
+#  === GetCryptoParameters message ===
+
+def get_crypto_parameters_ins_to_proto(p: List[int], g: List[int]) -> ServerMessage.GetCryptoParametersIns:
+    """Serialize `get_crypto_parameters_ins` to ProtoBuf."""
+    return ServerMessage.GetCryptoParametersIns(p=p, g=g)
+
+def get_crypto_parameters_ins_from_proto(msg: ServerMessage.GetCryptoParametersIns) -> Tuple[List[int], List[int]]:
+    """Deserialize `get_crypto_parameters_ins` from ProtoBuf."""
+    return msg.p, msg.g
+
+def get_crypto_parameters_res_to_proto(status: typing.Status, public_key: List[int]) -> ClientMessage.GetCryptoParametersRes:
+    """Serialize `get_crypto_parameters_res` to ProtoBuf."""
+    return ClientMessage.GetCryptoParametersRes(status=status, public_key=public_key)
+
+def get_crypto_parameters_res_from_proto(res: ClientMessage.GetCryptoParametersRes) -> List[int]:
+    """Deserialize `get_crypto_parameters_res` from ProtoBuf."""
+    return res.public_key
+
 
 #  === Parameters message ===
 

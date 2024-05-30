@@ -32,6 +32,10 @@ message Status {
   Code code = 1;
   string message = 2;
 }
+message PublicKey {
+  string owner = 1;
+  repeated int64 pk = 2;
+}
 message Parameters {
   repeated bytes tensors = 1;
   string tensor_type = 2;
@@ -60,6 +64,9 @@ message ServerMessage {
     repeated int64 p = 1;
     repeated int64 g = 2;
   }
+  message CreateEncryptionKeyIns {
+    repeated PublicKey public_keys = 1;
+  }
   oneof msg {
     ReconnectIns reconnect_ins = 1;
     GetPropertiesIns get_properties_ins = 2;
@@ -67,6 +74,7 @@ message ServerMessage {
     FitIns fit_ins = 4;
     EvaluateIns evaluate_ins = 5;
     GetCryptoParametersIns get_crypto_parameters_ins = 6;
+    CreateEncryptionKeyIns create_encryption_key_ins = 7;
   }
 }
 
@@ -96,6 +104,9 @@ message ClientMessage {
     Status status = 1;
     repeated int64 public_key = 2;
   }
+  message CreateEncryptionKeyRes {
+    Status status = 1;
+  }
   oneof msg {
     DisconnectRes disconnect_res = 1;
     GetPropertiesRes get_properties_res = 2;
@@ -103,6 +114,7 @@ message ClientMessage {
     FitRes fit_res = 4;
     EvaluateRes evaluate_res = 5;
     GetCryptoParametersRes get_crypto_parameters_res = 6;
+    CreateEncryptionKeyRes create_encryption_key_res = 7;
   }
 }
 
